@@ -1,0 +1,38 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.tabSize": 4,
+        "editor.rulers": [120]
+    },
+    "black-formatter.args": [
+        "--line-length",
+        "120"
+    ],
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "autoDocstring.docstringFormat": "google",
+    "autoDocstring.startOnNewLine": true,
+    "autoDocstring.includeExtendedSummary": true,
+    "autoDocstring.generateDocstringOnEnter": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/*.pyc": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true
+    }
+}

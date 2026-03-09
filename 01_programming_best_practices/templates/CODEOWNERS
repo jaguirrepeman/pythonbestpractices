@@ -1,0 +1,67 @@
+# CODEOWNERS — Define code ownership and required reviewers
+#
+# Each line defines a file pattern and the GitHub team(s) or user(s) who
+# must approve changes to matching files.
+#
+# Order matters: later rules override earlier ones.
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# ============================================================================
+# HOW TO USE:
+#   1. Copy this file to .github/CODEOWNERS in your repository.
+#   2. Replace @org/team-name with your actual GitHub organization and teams.
+#   3. Enable "Require review from Code Owners" in branch protection rules.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# DEFAULT: Catch-all rule — applies to all files not matched below
+# ---------------------------------------------------------------------------
+*                                   @org/data-science-team
+
+# ---------------------------------------------------------------------------
+# CORE BUSINESS LOGIC — Requires senior engineer review
+# ---------------------------------------------------------------------------
+src/my_project/core/                @org/ds-senior-engineers
+src/my_project/models/              @org/ds-senior-engineers
+
+# ---------------------------------------------------------------------------
+# API LAYER — Requires backend + DS review
+# ---------------------------------------------------------------------------
+src/my_project/api/                 @org/backend-team @org/ds-senior-engineers
+
+# ---------------------------------------------------------------------------
+# DATA LAYER — Data engineering owns schemas and loaders
+# ---------------------------------------------------------------------------
+src/my_project/data/                @org/data-engineering
+data/                               @org/data-engineering
+data/dictionaries/                  @org/data-engineering @org/data-science-team
+
+# ---------------------------------------------------------------------------
+# DOCUMENTATION — Tech leads review all documentation changes
+# ---------------------------------------------------------------------------
+docs/                               @org/ds-tech-leads
+*.md                                @org/ds-tech-leads
+mkdocs.yml                          @org/ds-tech-leads
+
+# ---------------------------------------------------------------------------
+# CI/CD AND INFRASTRUCTURE — Platform team owns pipelines
+# ---------------------------------------------------------------------------
+.github/                            @org/platform-team
+.github/workflows/                  @org/platform-team
+Dockerfile                          @org/platform-team
+docker-compose*.yml                 @org/platform-team
+
+# ---------------------------------------------------------------------------
+# PROJECT CONFIGURATION — Senior engineers approve config changes
+# ---------------------------------------------------------------------------
+pyproject.toml                      @org/ds-senior-engineers
+.pre-commit-config.yaml             @org/ds-senior-engineers
+setup.cfg                           @org/ds-senior-engineers
+.env.example                        @org/ds-senior-engineers
+
+# ---------------------------------------------------------------------------
+# SECURITY-SENSITIVE — Require security + senior review
+# ---------------------------------------------------------------------------
+**/auth/                            @org/security-team @org/ds-senior-engineers
+**/security/                        @org/security-team @org/ds-senior-engineers
