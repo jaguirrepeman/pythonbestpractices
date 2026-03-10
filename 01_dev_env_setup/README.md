@@ -8,51 +8,144 @@
 
 | # | Section |
 |---|------|
-| | [How the Toolchain Fits Together](#how-the-toolchain-fits-together) |
-| 1.1 | [System Package Manager (Homebrew)](#11--system-package-manager) |
-| 1.2 | [Python Version Management (pyenv)](#12--python-version-management-pyenv) |
-| 1.3 | [Virtual Environments & Poetry](#13--virtual-environments--poetry) |
-| 1.4 | [VS Code](#14--vs-code-setup) |
-| 1.5 | [Docker](#15--docker-for-development) |
-| 1.6 | [Environment Variables & Secrets](#16--environment-variables--secrets) |
-| 1.7 | [AI Coding Tools (Copilot, Claude)](#17--ai-assisted-coding-tools) |
-| 1.8 | [Setup Scripts & WSL Guide](#18--automated-setup-scripts) |
+| 1.1 | [Environment Toolchain Overview](#11--environment-toolchain-overview) |
+| 1.2 | [System Package Manager & WSL](#12--system-package-manager) |
+| 1.3 | [Python Version Management (pyenv)](#13--python-version-management-pyenv) |
+| 1.4 | [Virtual Environments & Poetry](#14--virtual-environments--poetry) |
+| 1.5 | [VS Code](#15--vs-code-setup) |
+| 1.6 | [Docker](#16--docker-for-development) |
+| 1.7 | [Environment Variables & Secrets](#17--environment-variables--secrets) |
+| 1.8 | [AI Coding Tools (Copilot, Claude)](#18--ai-assisted-coding-tools) |
+| 1.9 | [Setup Scripts & New Project Checklist](#19--setup-scripts--new-project-checklist) |
 
 ---
 
-## How the Toolchain Fits Together
+## 1.1 — Environment Toolchain Overview
 
 The dev environment relies on four tools. They work in layers, and each one covers a different concern:
 
 ```
-Homebrew / apt        System programs (git, pyenv, fzf, ripgrep...)
+System package manager  System programs (git, pyenv, fzf, ripgrep...)
        ↓
-pyenv                 Python VERSIONS (3.10, 3.11, 3.12...)
+pyenv                  Python Versions (3.10, 3.11, 3.12...)
        ↓
-Python 3.11           The interpreter itself, installed via pyenv
+Python 3.11            The interpreter itself, installed via pyenv
        ↓
-Poetry                Creates .venv/, resolves + installs PACKAGES (pandas, pytest...)
+Poetry                 Creates .venv/, resolves + installs PACKAGES (pandas, pytest...)
 ```
 
 | Tool | What it does | What it does NOT do |
 |------|-------------|---------------------|
-| **Homebrew** / **apt** | Installs native programs (git, pyenv, fzf, ripgrep...) | Has nothing to do with Python packages |
+| **System package manager** | Installs native programs (git, pyenv, fzf, ripgrep...) | Has nothing to do with Python packages |
 | **pyenv** | Installs multiple Python versions and switches between them per project | Does not install packages or create venvs |
 | **Poetry** | Creates an isolated `.venv/` per project, resolves, installs, and locks Python packages. Also builds `.whl` packages | Does not install Python itself |
 
-**"If we have Poetry, why do we also need pyenv?"**  
-Poetry manages packages and virtual environments, but it expects a Python interpreter to already be available. It cannot install Python. That is pyenv's job. And Homebrew/apt is what installs pyenv itself (along with git and other system tools).
+### System package manager: Homebrew vs apt
 
-**"What about venv?"**  
-Poetry uses Python's built-in `venv` module internally to create isolated environments. You do not need to run `python -m venv` yourself. When you run `poetry install`, Poetry detects the Python version (set by pyenv), creates a `.venv/` directory, and installs all dependencies inside it.
+The first layer in the diagram is a system package manager. Which one you use depends on the OS:
 
-> If the whole team uses a single Python version and does not plan to change, pyenv can be skipped (install Python directly with Homebrew instead). That said, pyenv adds negligible overhead and becomes very useful the moment a second project requires a different version.
+| OS | Package manager | Notes |
+|----|----------------|-------|
+| **macOS** | [Homebrew](https://brew.sh/) | The standard on macOS. Installed manually (see § 1.2) |
+| **Windows (WSL)** | **apt** (pre-installed) + Homebrew | Windows users develop inside **WSL 2** (Windows Subsystem for Linux), a full Linux environment that runs on Windows. Inside WSL, `apt` comes pre-installed. The setup script also installs [Homebrew for Linux](https://docs.brew.sh/Homebrew-on-Linux) so that `brew` commands work identically across macOS and WSL. See [§ 1.2.1](#121--wsl-setup-guide-windows) for installation instructions |
 
-> **Windows users:** All development happens inside **WSL 2** (Windows Subsystem for Linux). This means the commands in sections 1.1–1.3 are identical on macOS and Windows/WSL. See [§ 1.8.1](#181--wsl-setup-guide-windows) for WSL installation instructions.
+In practice, both do the same thing: install system-level programs like `git`, `pyenv`, `fzf`, and `ripgrep`. The rest of this guide uses `brew` in examples because it works on both platforms.
+
+
+**"Poetry and venv"**  
+Poetry uses Python's built-in `venv` module internally to create isolated environments (you do not need to run `python -m venv` yourself). When you run `poetry install`, Poetry detects the Python version (set by pyenv), creates a `.venv/` directory, and installs all dependencies inside it.
+
+> **Windows users:** All development happens inside **WSL 2** (Windows Subsystem for Linux). This means the commands in sections 1.2–1.4 are identical on macOS and Windows/WSL. See [§ 1.2.1](#121--wsl-setup-guide-windows) for WSL installation instructions.
 
 ---
 
-## 1.1 — System Package Manager
+## 1.2 — System Package Manager
+
+### 1.2.1 — WSL Setup Guide (Windows)
+
+> **macOS users:** Skip this subsection. It only applies to Windows.
+
+**WSL 2** (Windows Subsystem for Linux) provides a full Linux environment on Windows. All Python development, pyenv, Homebrew, and terminal workflows run inside WSL, identical to macOS. You need to install WSL before you can use `apt` or `brew`.
+
+#### Step 1 — Install WSL 2
+
+Open **PowerShell as Administrator** and run:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+This installs WSL 2 + Ubuntu. Restart your machine when prompted. On reboot, a terminal opens asking you to create a Linux username and password.
+
+> If WSL was already installed, make sure you're on version 2: `wsl --set-default-version 2`
+
+#### Step 2 — Verify
+
+```powershell
+# From PowerShell
+wsl --list --verbose
+```
+
+You should see Ubuntu with VERSION = 2.
+
+#### Step 3 — Install VS Code WSL Extension
+
+1. Open VS Code **on Windows**
+2. Install the **WSL** extension (`ms-vscode-remote.remote-wsl`)
+3. Open a WSL terminal: `Ctrl+Shift+`` → select **Ubuntu (WSL)**
+4. Or from the WSL terminal, type `code .` to open VS Code connected to WSL
+
+#### Step 4 — Run the Setup Script
+
+Inside the WSL terminal:
+
+```bash
+cd /path/to/pythonbestpractices/01_dev_env_setup
+chmod +x scripts/setup_wsl.sh
+./scripts/setup_wsl.sh
+```
+
+The script installs all the same tools as macOS (Homebrew, pyenv, Poetry, VS Code extensions) plus the build dependencies that Ubuntu needs for compiling Python. See [§ 1.9](#19--setup-scripts--new-project-checklist) for details on both setup scripts.
+
+#### How VS Code + WSL Works
+
+```
+┌─────────────────────────┐     ┌──────────────────────────┐
+│   Windows Host          │     │   WSL 2 (Ubuntu)         │
+│                         │     │                          │
+│   VS Code UI ◄──────────┼─────┤   VS Code Server         │
+│   Extensions (UI)       │     │   Extensions (workspace) │
+│                         │     │   Python, pyenv, Poetry  │
+│                         │     │   Git, pre-commit, ruff  │
+│                         │     │   Your project files     │
+└─────────────────────────┘     └──────────────────────────┘
+```
+
+- **VS Code runs on Windows**, but the workspace, terminal, debugger, and extensions execute **inside WSL**.
+- File system: keep your projects in the **WSL filesystem** (`~/projects/`), not in `/mnt/c/`. The Linux filesystem is significantly faster.
+- Git credentials: the setup script configures Git Credential Manager to share credentials between Windows and WSL.
+- Terminal: VS Code auto-detects WSL. Default terminal will be Ubuntu bash.
+
+#### Common WSL Commands
+
+| Command | Description |
+|---------|-------------|
+| `wsl` | Open default WSL distro from PowerShell |
+| `wsl --shutdown` | Stop all WSL instances (useful to free RAM) |
+| `wsl --list --verbose` | List installed distros and WSL version |
+| `explorer.exe .` | Open Windows Explorer in current WSL directory |
+| `code .` | Open VS Code connected to WSL in current directory |
+
+#### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `code` command not found in WSL | Open VS Code on Windows → `Ctrl+Shift+P` → "Shell Command: Install 'code' command" |
+| Slow file access | Move projects to `~/projects/` instead of `/mnt/c/` |
+| WSL using too much RAM | Create `%USERPROFILE%\.wslconfig` with `[wsl2]\nmemory=8GB` |
+| Git auth fails | Run `git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"` |
+
+---
 
 ### macOS: Homebrew
 
@@ -81,21 +174,15 @@ sudo apt update && sudo apt install -y git wget curl jq
 brew install fzf ripgrep
 ```
 
-> Native Windows package managers (winget, Chocolatey) are not used for Python development. Everything runs inside WSL.
-
 ---
 
-## 1.2 — Python Version Management (pyenv)
+## 1.3 — Python Version Management (pyenv)
 
 [pyenv](https://github.com/pyenv/pyenv) manages multiple Python versions on the same machine. It lets you install, uninstall, and switch versions without ever touching the system Python.
 
 ### Installation
 
 ```bash
-# macOS (via Homebrew)
-brew install pyenv
-
-# WSL/Linux (via Homebrew or build from source — the setup script handles this)
 brew install pyenv
 
 # Add to shell profile (~/.zshrc or ~/.bashrc)
@@ -105,7 +192,9 @@ echo 'eval "$(pyenv init -)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-> **Note:** We do not use pyenv-win. Windows users install the standard pyenv inside WSL, which behaves identically to macOS.
+`brew install pyenv` installs the binary, but pyenv also needs to hook into the shell so it can intercept the `python` command and switch versions automatically. The three `echo` lines add that hook to the shell profile. Without them, commands like `pyenv local 3.11.9` would have no effect.
+
+> The setup scripts ([§ 1.9](#19--automated-setup-scripts)) already handle this configuration. These manual steps are only needed if you are setting up pyenv without the script.
 
 ### Usage
 
@@ -131,13 +220,22 @@ python --version  # → Python 3.11.9
 
 | Rule | Details |
 |------|---------|
-| Minimum Python version | **≥ 3.10** (preferably 3.11+) |
+| Minimum Python version | **≥ 3.11** |
 | Version pinning | Every project has a `.python-version` file committed to Git |
 | System Python | **Never** install packages into system Python |
 
+The `.python-version` file lives in the **project root** (next to `pyproject.toml`) and contains a single line with the version number (e.g. `3.11.9`). You create it once when setting up the project:
+
+```bash
+cd my-project
+pyenv local 3.11.9   # creates .python-version
+```
+
+After that, you do not need to use pyenv again for day-to-day work. When you (or a new team member) clone the repo and run `poetry install`, Poetry reads `.python-version`, picks up the correct Python, and creates the `.venv/` automatically. The file just needs to exist in the repo.
+
 ---
 
-## 1.3 — Virtual Environments & Poetry
+## 1.4 — Virtual Environments & Poetry
 
 ### What is a virtual environment?
 
@@ -145,7 +243,18 @@ A virtual environment is an isolated copy of Python with its own `site-packages`
 
 Python ships a built-in module (`venv`) to create these environments. **Poetry uses `venv` internally**, so you do not need to create environments manually.
 
-### Poetry configuration
+### What is Poetry?
+
+[Poetry](https://python-poetry.org/) is the tool we use to manage dependencies and virtual environments. In a single command (`poetry install`) it:
+
+1. Reads `.python-version` to pick the correct Python interpreter
+2. Creates an isolated `.venv/` in the project root
+3. Resolves and installs all dependencies declared in `pyproject.toml`
+4. Generates a `poetry.lock` file that pins exact versions for reproducibility
+
+It replaces the manual workflow of `python -m venv` + `pip install` + `requirements.txt`.
+
+### Team configuration
 
 One-time setup so Poetry creates the `.venv/` inside each project directory (instead of a hidden cache folder):
 
@@ -155,46 +264,16 @@ poetry config virtualenvs.in-project true
 
 This makes the venv visible in the project root, which VS Code auto-detects as the interpreter.
 
-### Day-to-day workflow: pyenv + Poetry
+> The setup scripts ([§ 1.9](#19--automated-setup-scripts)) already run this command.
+
+### Quick start
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/org/my-project.git
 cd my-project
-
-# 2. pyenv sets the correct Python version (reads .python-version)
-python --version  # → 3.11.9
-
-# 3. Poetry creates .venv/ and installs all dependencies
-poetry install
-
-# 4. Activate the environment
-source .venv/bin/activate   # or: poetry shell
-
-# Ready to work
+poetry install                  # creates .venv/ + installs everything
+source .venv/bin/activate       # or: poetry shell
 ```
-
-No `python -m venv` step needed. Poetry handles it.
-
-### Adding and removing packages
-
-```bash
-# Add a dependency
-poetry add pandas
-
-# Add a dev-only dependency
-poetry add --group dev pytest ruff
-
-# Remove a dependency
-poetry remove pandas
-
-# Update all dependencies to latest compatible versions
-poetry update
-```
-
-Poetry writes two files:
-- `pyproject.toml` — declared dependencies (committed to Git)
-- `poetry.lock` — exact resolved versions (committed to Git)
 
 ### Rules
 
@@ -207,15 +286,15 @@ Poetry writes two files:
 | Naming | Always `.venv`, for consistency across the team |
 | System Python | Never install packages into it |
 
-> For a deeper dive into Poetry (dependency groups, scripts, publishing, monorepo patterns), see [Module 2](../02_python_best_practices/).
+> **Poetry Guide:** For detailed usage (adding/removing packages, dependency groups, scripts, publishing, monorepo patterns, and more), see the [Poetry Guide](TODO_POETRY_GUIDE_LINK).
 
 ---
 
-## 1.4 — VS Code Setup
+## 1.5 — VS Code Setup
 
 VS Code is the standard IDE for the team. A detailed catalog of all required and recommended extensions lives in [`vscode_extensions.md`](vscode_extensions.md).
 
-### Mandatory Extensions (quick list)
+### Mandatory Extensions
 
 | Extension | ID | Purpose |
 |-----------|----|---------|
@@ -225,15 +304,24 @@ VS Code is the standard IDE for the team. A detailed catalog of all required and
 | Python Debugger | `ms-python.debugpy` | Debugging |
 | Jupyter | `ms-toolsai.jupyter` | Notebook support |
 | GitLens | `eamodio.gitlens` | Git blame, history, file annotations |
-| Claude | `anthropic.claude-code` | AI coding assistant |
+| Claude Code | `anthropic.claude-code` | AI coding assistant |
 | autoDocstring | `njpwerner.autodocstring` | Generate Google Style docstrings |
-| Find It Faster | `tomrijndorp.find-it-faster` | Fuzzy file/content search powered by `fd` + `rg` |
 | Excalidraw | `pomdtr.excalidraw-editor` | Whiteboard / architecture diagrams inside VS Code |
 | WSL | `ms-vscode-remote.remote-wsl` | Develop inside WSL from VS Code on Windows |
 
+### Recommended (optional)
+
+| Extension | ID | Purpose |
+|-----------|----|---------|
+| Find It Faster | `tomrijndorp.find-it-faster` | Fuzzy file/content search powered by `fd` + `rg` |
+| Rainbow CSV | `mechatroner.rainbow-csv` | Color-coded columns in CSV/TSV files |
+| Excel Viewer | `GrapeCity.gc-excelviewer` | Read-only `.xlsx`/`.csv` viewer |
+
+> See [`vscode_extensions.md`](vscode_extensions.md) for the full catalog with detailed documentation, shortcuts, configuration tips, a bulk install script, and an `extensions.json` template.
+
 ### Shared VS Code Settings
 
-Copy to `.vscode/settings.json` in every project:
+These settings ensure the entire team uses the same formatting, linting, and editor behavior. Copy to `.vscode/settings.json` in every project:
 
 ```json
 {
@@ -261,13 +349,28 @@ Copy to `.vscode/settings.json` in every project:
 }
 ```
 
-> See [`vscode_extensions.md`](vscode_extensions.md) for comprehensive documentation of each extension, including shortcuts, configuration, and usage tips.  
+What each setting does:
+
+| Setting | Effect |
+|---------|--------|
+| `editor.formatOnSave` | Automatically formats the file every time you save |
+| `editor.defaultFormatter: ruff` | Uses Ruff as the formatter for Python files |
+| `editor.tabSize: 4` | 4-space indentation (PEP 8 standard) |
+| `source.fixAll` | Applies all auto-fixable lint rules on save |
+| `source.organizeImports` | Sorts and groups imports on save (replaces isort) |
+| `ruff.lineLength: 120` | Maximum line length. Team standard is 120 characters |
+| `python.analysis.typeCheckingMode: basic` | Pylance checks type hints at a basic level (catches common errors without being too strict) |
+| `autoDocstring.docstringFormat: google` | Generates docstrings in Google Style format |
+| `files.trimTrailingWhitespace` | Removes trailing spaces on save (avoids noisy git diffs) |
+| `files.insertFinalNewline` | Ensures every file ends with a newline (POSIX standard) |
+| `files.exclude` | Hides `.venv/`, `__pycache__/`, and cache folders from the VS Code explorer |
+
 > See the [`debug/`](debug/) folder for a 3-part debugging masterclass.
 
 ### Bulk Install Script
 
 ```bash
-# Install all mandatory extensions at once
+# === Mandatory ===
 code --install-extension ms-python.python
 code --install-extension ms-python.vscode-pylance
 code --install-extension charliermarsh.ruff
@@ -276,14 +379,18 @@ code --install-extension ms-toolsai.jupyter
 code --install-extension eamodio.gitlens
 code --install-extension anthropic.claude-code
 code --install-extension njpwerner.autodocstring
-code --install-extension tomrijndorp.find-it-faster
 code --install-extension pomdtr.excalidraw-editor
 code --install-extension ms-vscode-remote.remote-wsl
+
+# === Optional ===
+code --install-extension tomrijndorp.find-it-faster
+code --install-extension mechatroner.rainbow-csv
+code --install-extension GrapeCity.gc-excelviewer
 ```
 
 ---
 
-## 1.5 — Docker for Development
+## 1.6 — Docker for Development
 
 We use Docker to containerize the runtime environment, particularly for CI/CD pipelines in GitHub Actions.
 
@@ -342,7 +449,7 @@ docs/
 
 ---
 
-## 1.6 — Environment Variables & Secrets
+## 1.7 — Environment Variables & Secrets
 
 ### Local Development: `.env`
 
@@ -401,7 +508,7 @@ env:
 
 ---
 
-## 1.7 — AI-Assisted Coding Tools
+## 1.8 — AI-Assisted Coding Tools
 
 ### Approved Tools
 
@@ -477,7 +584,7 @@ Claude Code also reads `.claude/settings.json` to scope what it can do. Use it t
 
 ---
 
-## 1.8 — Automated Setup Scripts
+## 1.9 — Automated Setup Scripts
 
 Ready-to-use scripts that install the full dev environment from scratch. Each script handles: system dependencies, pyenv, Python, Poetry, pre-commit, and VS Code extensions.
 
@@ -488,91 +595,89 @@ Ready-to-use scripts that install the full dev environment from scratch. Each sc
 
 Both scripts accept an optional Python version argument: `./scripts/setup_macos.sh 3.12.3`
 
-> **Windows users:** We use **WSL 2** (Windows Subsystem for Linux) as the standard development environment. See the WSL setup guide below before running the script.
+> **Windows users:** Install WSL 2 first ([§ 1.2.1](#121--wsl-setup-guide-windows)), then run `setup_wsl.sh`.
 
 ---
 
-### 1.8.1 — WSL Setup Guide (Windows)
+## Project Setup — Step by Step
 
-**WSL 2** provides a full Linux environment on Windows. All Python development, pyenv, Homebrew, and terminal workflows run inside WSL, identical to macOS. VS Code connects to WSL through the **WSL extension**.
+This is the sequence to set up a new project from scratch, combining all the tools covered in this module.
 
-#### Step 1 — Install WSL 2
-
-Open **PowerShell as Administrator** and run:
-
-```powershell
-wsl --install -d Ubuntu
-```
-
-This installs WSL 2 + Ubuntu. Restart your machine when prompted. On reboot, a terminal opens asking you to create a Linux username and password.
-
-> If WSL was already installed, make sure you're on version 2: `wsl --set-default-version 2`
-
-#### Step 2 — Verify
-
-```powershell
-# From PowerShell
-wsl --list --verbose
-```
-
-You should see Ubuntu with VERSION = 2.
-
-#### Step 3 — Install VS Code WSL Extension
-
-1. Open VS Code **on Windows**
-2. Install the **WSL** extension (`ms-vscode-remote.remote-wsl`)
-3. Open a WSL terminal: `Ctrl+Shift+`` → select **Ubuntu (WSL)**
-4. Or from the WSL terminal, type `code .` to open VS Code connected to WSL
-
-#### Step 4 — Run the Setup Script
-
-Inside the WSL terminal:
+### 1. Create the project and pin the Python version
 
 ```bash
-cd /path/to/pythonbestpractices/01_dev_env_setup
-chmod +x scripts/setup_wsl.sh
-./scripts/setup_wsl.sh
+mkdir my-project && cd my-project
+pyenv local 3.11.9          # creates .python-version
 ```
 
-The script installs all the same tools as macOS (Homebrew, pyenv, Poetry, VS Code extensions) plus the build dependencies that Ubuntu needs for compiling Python.
+### 2. Initialize Poetry
 
-#### How VS Code + WSL Works
-
-```
-┌─────────────────────────┐     ┌──────────────────────────┐
-│   Windows Host          │     │   WSL 2 (Ubuntu)         │
-│                         │     │                          │
-│   VS Code UI ◄──────────┼─────┤   VS Code Server         │
-│   Extensions (UI)       │     │   Extensions (workspace) │
-│                         │     │   Python, pyenv, Poetry  │
-│                         │     │   Git, pre-commit, ruff  │
-│                         │     │   Your project files     │
-└─────────────────────────┘     └──────────────────────────┘
+```bash
+poetry init                 # interactive — creates pyproject.toml
+poetry install              # creates .venv/ and poetry.lock
 ```
 
-- **VS Code runs on Windows**, but the workspace, terminal, debugger, and extensions execute **inside WSL**.
-- File system: keep your projects in the **WSL filesystem** (`~/projects/`), not in `/mnt/c/`. The Linux filesystem is significantly faster.
-- Git credentials: the setup script configures Git Credential Manager to share credentials between Windows and WSL.
-- Terminal: VS Code auto-detects WSL. Default terminal will be Ubuntu bash.
+### 3. Add project configuration files
 
-#### Common WSL Commands
+```bash
+# Git
+git init
+cp /path/to/templates/.gitignore .gitignore
 
-| Command | Description |
-|---------|-------------|
-| `wsl` | Open default WSL distro from PowerShell |
-| `wsl --shutdown` | Stop all WSL instances (useful to free RAM) |
-| `wsl --list --verbose` | List installed distros and WSL version |
-| `explorer.exe .` | Open Windows Explorer in current WSL directory |
-| `code .` | Open VS Code connected to WSL in current directory |
+# VS Code settings
+mkdir -p .vscode
+cp /path/to/templates/.vscode/settings.json .vscode/settings.json
 
-#### Troubleshooting
+# Environment variables
+cp /path/to/templates/.env.example .env.example
+cp .env.example .env        # fill in local values
 
-| Issue | Solution |
-|-------|----------|
-| `code` command not found in WSL | Open VS Code on Windows → `Ctrl+Shift+P` → "Shell Command: Install 'code' command" |
-| Slow file access | Move projects to `~/projects/` instead of `/mnt/c/` |
-| WSL using too much RAM | Create `%USERPROFILE%\.wslconfig` with `[wsl2]\nmemory=8GB` |
-| Git auth fails | Run `git config --global credential.helper "/mnt/c/Program\ Files/Git/mingw64/bin/git-credential-manager.exe"` |
+# AI coding instructions
+mkdir -p .github
+cp /path/to/templates/.github/copilot-instructions.md .github/copilot-instructions.md
+ln -s .github/copilot-instructions.md CLAUDE.md
+
+# Pre-commit hooks
+cp /path/to/templates/.pre-commit-config.yaml .pre-commit-config.yaml
+pre-commit install
+```
+
+### Resulting directory structure
+
+```
+my-project/
+├── .github/
+│   └── copilot-instructions.md   ← AI coding instructions (Copilot reads this)
+├── .vscode/
+│   └── settings.json             ← shared editor settings (§ 1.5)
+├── .venv/                        ← virtual environment (created by Poetry, in .gitignore)
+├── src/
+│   └── my_project/
+│       └── __init__.py
+├── tests/
+│   └── __init__.py
+├── .env                          ← local secrets (in .gitignore)
+├── .env.example                  ← template showing expected variables (committed)
+├── .gitignore
+├── .python-version               ← pinned Python version, e.g. "3.11.9" (committed)
+├── .pre-commit-config.yaml       ← pre-commit hook configuration (committed)
+├── CLAUDE.md                     ← symlink → .github/copilot-instructions.md (committed)
+├── pyproject.toml                ← project metadata + dependencies (committed)
+└── poetry.lock                   ← exact resolved versions (committed)
+```
+
+| File | Committed to Git? | Created by |
+|------|--------------------|------------|
+| `.python-version` | Yes | `pyenv local <version>` |
+| `pyproject.toml` | Yes | `poetry init` |
+| `poetry.lock` | Yes | `poetry install` |
+| `.venv/` | **No** (.gitignore) | `poetry install` |
+| `.env` | **No** (.gitignore) | Manual (copy from `.env.example`) |
+| `.env.example` | Yes | Manual (template) |
+| `.vscode/settings.json` | Yes | Manual (copy from template) |
+| `.github/copilot-instructions.md` | Yes | Manual (copy from template) |
+| `CLAUDE.md` | Yes | `ln -s .github/copilot-instructions.md CLAUDE.md` |
+| `.pre-commit-config.yaml` | Yes | Manual (copy from template) |
 
 ---
 

@@ -29,10 +29,22 @@ brew install git pyenv wget curl jq fd ripgrep fzf
 # ── 3. pyenv — install Python ────────────────────────────────
 echo "▸ Installing Python ${PYTHON_VERSION} via pyenv..."
 
-# Ensure pyenv shell integration
+# Ensure pyenv shell integration (current session)
 export PYENV_ROOT="${HOME}/.pyenv"
 export PATH="${PYENV_ROOT}/bin:${PATH}"
 eval "$(pyenv init -)"
+
+# Persist to shell profile so it works in new terminals
+SHELL_PROFILE="${HOME}/.zshrc"
+if ! grep -q 'PYENV_ROOT' "${SHELL_PROFILE}" 2>/dev/null; then
+    {
+        echo ''
+        echo '# pyenv'
+        echo 'export PYENV_ROOT="${HOME}/.pyenv"'
+        echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"'
+        echo 'eval "$(pyenv init -)"'
+    } >> "${SHELL_PROFILE}"
+fi
 
 pyenv install -s "${PYTHON_VERSION}"
 pyenv global "${PYTHON_VERSION}"

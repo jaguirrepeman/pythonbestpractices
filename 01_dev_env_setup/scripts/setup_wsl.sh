@@ -4,7 +4,7 @@
 #
 # Prerequisites:
 #   WSL 2 with Ubuntu must already be installed. See the WSL setup guide
-#   in 01_dev_env_setup/README.md § 1.8.1 for step-by-step instructions.
+#   in 01_dev_env_setup/README.md § 1.2.1 for step-by-step instructions.
 set -euo pipefail
 
 PYTHON_VERSION="${1:-3.11.9}"
